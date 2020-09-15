@@ -1,1 +1,1 @@
-bot: java -jar build/libs/bezslov_store_telegram_bot-0.0.1.jar
+bot: build/scripts/bezslov_store_telegram_bot-0.0.1
