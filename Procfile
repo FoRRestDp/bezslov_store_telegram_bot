@@ -1,1 +1,1 @@
-bot: build/scripts/bezslov_store_telegram_bot
+bot: build/install/bezslov_store_telegram_bot/bin/bezslov_store_telegram_bot
