@@ -8,7 +8,7 @@ fun main() {
         dispatch { 
             text { bot, update ->
                 val text = update.message?.text ?: ""
-                bot.sendMessage(chatId = update.message!!.chat.id, text = text)
+                bot.sendMessage(chatId = update.message!!.chat.id, text = text.capitalize())
             }
         }
     }.startPolling()
