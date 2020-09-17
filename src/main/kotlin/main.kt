@@ -12,6 +12,7 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.math.BigDecimal
 import com.github.kotlintelegrambot.entities.KeyboardButton
+import java.net.URI
 
 object Categories : IntIdTable() {
     override val primaryKey = PrimaryKey(id)
@@ -70,18 +71,24 @@ sealed class AdminStep {
 }
 
 fun main() {
-    /*val dbUri = runCatching {  URI(System.getenv("DATABASE_URL")) }.getOrElse { URI("jdbc:postgres://egorponomaryov") }
-
-    val username: String = runCatching { dbUri.userInfo.split(":")[0] }.getOrElse { "egorponomaryov" }
-    val password: String = dbUri.userInfo.split(":")[1]
-    val dbUrl =
-        "jdbc:postgresql://" + dbUri.host + ':' + dbUri.port + dbUri.path.toString() + "?sslmode=require"*/
-    val db = Database.connect(
-            url = "jdbc:postgresql://localhost:5432/egorponomaryov",
-            driver = "org.postgresql.Driver",
-            user = "egorponomaryov",
-            password = ""
-    )
+    val db = runCatching { 
+        val dbUri = URI(System.getenv("DATABASE_URL"))
+        val username = dbUri.userInfo.split(":")[0]
+        val password = dbUri.userInfo.split(":")[1]
+        Database.connect(
+                url = "jdbc:postgresql://${dbUri.host}:${dbUri.port}${dbUri.path}?sslmode=require",
+                driver = "org.postgresql.Driver",
+                user = username,
+                password = password
+        )
+    }.getOrElse {
+        Database.connect(
+                url = "jdbc:postgresql://localhost:5432/egorponomaryov",
+                driver = "org.postgresql.Driver",
+                user = "egorponomaryov",
+                password = ""
+        )
+    } 
 
     bot {
         token = "1396640094:AAEHqmLePI56L_PPZt_OQZGbc8U9yWb94H0"
