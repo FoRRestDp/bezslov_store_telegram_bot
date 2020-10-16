@@ -1,16 +1,12 @@
 package com.github.forrestdp.states
 
 import com.github.forrestdp.*
-import com.github.forrestdp.tables.Items
-import com.github.forrestdp.tables.SelectedItems
-import com.github.forrestdp.tables.UsersItems
+import com.github.forrestdp.tableentities.CartItem
+import com.github.forrestdp.tableentities.SelectedItem
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.entities.InlineKeyboardButton
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
 import com.github.kotlintelegrambot.entities.Update
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.andWhere
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.math.BigDecimal
 
@@ -19,49 +15,26 @@ fun toCart(bot: Bot, update: Update) {
 }
 
 private fun Bot.showCart(update: Update) {
-    data class NamePriceItemCountAllItemsCountAndIndexOfSelectedItem(
-            val name: String,
-            val price: BigDecimal?,
-            val itemCount: Int,
-            val allItemsCount: Long,
-            val indexOfSelectedItem: Int,
-    )
-
-    val chatId = update.callbackQuery?.message?.chat?.id ?: throw Exception("Message is not defined")
-    val selectedItemId = transaction {
-        SelectedItems
-                .slice(SelectedItems.usersItemsId)
-                .select { SelectedItems.userChatId eq chatId }
-                .firstOrNull()
-                ?.getOrNull(SelectedItems.usersItemsId) ?: throw Exception("Selected item is not found")
+    val chatId = update.callbackQuery?.message?.chat?.id ?: error("Message is not defined")
+    val selectedItem = transaction {
+        SelectedItem.all().firstOrNull { it.user.chatId == chatId }
     }
-    val info = transaction {
-        val query = (UsersItems innerJoin Items)
-                .slice(Items.id, Items.name, Items.price, UsersItems.itemCount)
-                .select {
-                    (UsersItems.itemId eq Items.id) and (UsersItems.userChatId eq chatId)
-                }
-                .orderBy(Items.id)
-        val allItemsCount = query.count()
-        val resultRow = query
-                .andWhere { UsersItems.itemId eq selectedItemId }
-                .firstOrNull() ?: throw Exception("Name and price for cart are not found")
-        val indexOfSelectedItem = query.map { it[Items.id].value }.indexOf(selectedItemId)
-
-        NamePriceItemCountAllItemsCountAndIndexOfSelectedItem(
-                resultRow[Items.name],
-                resultRow[Items.price],
-                resultRow[UsersItems.itemCount],
-                allItemsCount,
-                indexOfSelectedItem
-        )
+    
+    if (selectedItem == null) {
+        this.sendMessage(chatId,
+        """
+            В корзине пусто
+        """.trimIndent())
+        return
     }
-    val name = info.name
-    val price = info.price?.toString() ?: "--"
-    val itemCount = info.itemCount
-    val cost = info.price?.multiply(BigDecimal(itemCount))?.toString() ?: "--"
-    val allUserItemsCount = info.allItemsCount
-    val indexOfSelectedItem = info.indexOfSelectedItem
+    
+    val cartItem = transaction { selectedItem.cartItem }
+    val name = transaction { cartItem.item.name }
+    val price = transaction { cartItem.item.price }
+    val itemCount = transaction { cartItem.itemCount }
+    val cost = price?.multiply(BigDecimal(itemCount))?.toString() ?: "--"
+    val allUserItemsCount = transaction { CartItem.all().filter { it.user.chatId == chatId }.size }
+    val indexOfSelectedItem = transaction { CartItem.all().indexOf(cartItem) }
 
     val removeAllButton = InlineKeyboardButton("X", callbackData = REMOVE_FROM_CART_CALLBACK)
     val addOneButton = InlineKeyboardButton("+", callbackData = ADD_ONE_TO_CART_CALLBACK)

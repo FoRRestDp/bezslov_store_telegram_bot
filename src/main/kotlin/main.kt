@@ -6,7 +6,7 @@ import java.net.URI
 
 fun main() {
     val databaseUrl: String? = System.getenv("DATABASE_URL")
-    val db = if (databaseUrl != null) {
+    if (databaseUrl != null) {
         val dbUri = URI(databaseUrl)
         val username = dbUri.userInfo.split(":")[0]
         val password = dbUri.userInfo.split(":")[1]

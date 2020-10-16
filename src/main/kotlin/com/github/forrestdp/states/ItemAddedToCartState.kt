@@ -1,7 +1,7 @@
 package com.github.forrestdp.states
 
 import com.github.forrestdp.CART_CALLBACK
-import com.github.forrestdp.tableentities.Cart
+import com.github.forrestdp.tableentities.CartItem
 import com.github.forrestdp.tableentities.Item
 import com.github.forrestdp.tableentities.User
 import com.github.kotlintelegrambot.Bot
@@ -16,11 +16,11 @@ fun addItemToCart(bot: Bot, update: Update, chatId: Long, data: String) {
     val selectedItemCount = transaction {
         val user = User.findById(chatId) ?: error("User with such chat id not found")
         val item = Item.findById(selectedItemId) ?: error("Item with such id not found")
-        val cart = Cart.all().firstOrNull { 
+        val cart = CartItem.all().firstOrNull { 
             it.item == item && it.user == user
         }
         if (cart == null) {
-            Cart.new { 
+            CartItem.new { 
                 this.item = item
                 this.user = user
             }

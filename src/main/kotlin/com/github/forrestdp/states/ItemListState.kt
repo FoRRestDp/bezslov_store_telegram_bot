@@ -27,7 +27,6 @@ fun toItemsList(bot: Bot, update: Update, chatId: Long, data: String) {
             val id = item.id.value
             val name = item.name
             val description = item.description ?: "его пока нет"
-            val imageTelegram = item.imageTelegram
             val price = item.price?.toString() ?: "--"
             val itemsCount = getItemCountInUserCart(user, item)
             val responseText = """
