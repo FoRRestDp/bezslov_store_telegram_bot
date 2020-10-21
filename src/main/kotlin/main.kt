@@ -1,7 +1,13 @@
 import com.github.forrestdp.dispatch
+import com.github.forrestdp.tableentities.User
 import com.github.kotlintelegrambot.bot
 import com.github.kotlintelegrambot.dispatch
+import com.github.kotlintelegrambot.dispatcher.command
+import com.github.kotlintelegrambot.entities.InlineKeyboardButton
+import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
+import okhttp3.logging.HttpLoggingInterceptor
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.transactions.transaction
 import java.net.URI
 
 fun main() {
@@ -26,6 +32,7 @@ fun main() {
     }
 
     bot {
+//        logLevel = HttpLoggingInterceptor.Level.NONE
         token = "1396640094:AAEHqmLePI56L_PPZt_OQZGbc8U9yWb94H0"
         dispatch { dispatch() }
     }.startPolling()

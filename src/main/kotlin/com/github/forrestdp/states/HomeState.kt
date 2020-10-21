@@ -11,8 +11,8 @@ import com.github.kotlintelegrambot.entities.KeyboardReplyMarkup
 import com.github.kotlintelegrambot.entities.Update
 import org.jetbrains.exposed.sql.transactions.transaction
 
-fun toHomeWithCommand(bot: Bot, update: Update) {
-    val chatId = update.message?.chat?.id ?: throw Exception("Message not defined")
+fun toHomeFirstTime(bot: Bot, update: Update) {
+    val chatId = update.message?.chat?.id ?: error("Message not defined")
     transaction {
         if (User.findById(chatId) == null) {
             User.new(chatId) {}
@@ -21,8 +21,8 @@ fun toHomeWithCommand(bot: Bot, update: Update) {
     bot.sendHomeMessage(chatId)
 }
 
-fun toHomeWithButton(bot: Bot, update: Update) {
-    val chatId = update.message?.chat?.id ?: throw Exception("Message not defined")
+fun toHome(bot: Bot, update: Update) {
+    val chatId = update.message?.chat?.id ?: error("Message not defined")
     bot.sendHomeMessage(chatId)
 }
 

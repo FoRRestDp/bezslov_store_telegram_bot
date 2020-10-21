@@ -8,13 +8,13 @@ import com.github.kotlintelegrambot.dispatcher.text
 
 fun Dispatcher.dispatch() {
     // Home
-    command("start") { bot, update -> toHomeWithCommand(bot, update) }
-    text(HOME_BUTTON_TEXT) { bot, update -> toHomeWithButton(bot, update) }
+    command("start") { bot, update -> toHomeFirstTime(bot, update) }
+    text(HOME_BUTTON_TEXT) { bot, update -> toHome(bot, update) }
     // Catalog
     text(CATEGORIES_LIST_BUTTON_TEXT) { bot, update -> toCategoriesList(bot, update) }
     // User cart
-    text(CART_BUTTON_TEXT) { bot, update -> toCart(bot, update) }
-    callbackQuery(CART_CALLBACK) { bot, update -> toCart(bot, update) }
+    text(CART_BUTTON_TEXT) { bot, update -> goToCartWithNewMessage(bot, update) }
+    callbackQuery(CART_CALLBACK) { bot, update -> goToCartWithNewMessage(bot, update) }
     // Checkout
     text(CHECKOUT_BUTTON_TEXT) { bot, update -> toCheckout(bot, update) }
     // Other

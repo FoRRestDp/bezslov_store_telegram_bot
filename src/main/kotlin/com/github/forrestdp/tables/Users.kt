@@ -1,11 +1,9 @@
 package com.github.forrestdp.tables
 
-import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IdTable
 import org.jetbrains.exposed.sql.Column
-import org.jetbrains.exposed.sql.Table
 
-object Users : IdTable<Long>() {
+object Users : IdTable<Long>("users") {
     val chatId: Column<Long> = long("chat_id")
     override val primaryKey = PrimaryKey(chatId)
     override val id = chatId.entityId()
