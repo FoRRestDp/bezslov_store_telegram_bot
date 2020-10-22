@@ -1,9 +1,6 @@
 package com.github.forrestdp.states
 
-import com.github.forrestdp.CART_BUTTON_TEXT
-import com.github.forrestdp.CATEGORIES_LIST_BUTTON_TEXT
-import com.github.forrestdp.HELP_BUTTON_TEXT
-import com.github.forrestdp.ORDERS_BUTTON_TEXT
+import com.github.forrestdp.*
 import com.github.forrestdp.tableentities.User
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.entities.KeyboardButton
@@ -12,7 +9,7 @@ import com.github.kotlintelegrambot.entities.Update
 import org.jetbrains.exposed.sql.transactions.transaction
 
 fun toHomeFirstTime(bot: Bot, update: Update) {
-    val chatId = update.message?.chat?.id ?: error("Message not defined")
+    val chatId = update.chatId
     transaction {
         if (User.findById(chatId) == null) {
             User.new(chatId) {}
@@ -22,7 +19,7 @@ fun toHomeFirstTime(bot: Bot, update: Update) {
 }
 
 fun toHome(bot: Bot, update: Update) {
-    val chatId = update.message?.chat?.id ?: error("Message not defined")
+    val chatId = update.chatId
     bot.sendHomeMessage(chatId)
 }
 

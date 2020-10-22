@@ -5,6 +5,7 @@ import com.github.forrestdp.tableentities.CartItem
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.entities.InlineKeyboardButton
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
+import com.github.kotlintelegrambot.entities.ParseMode
 import com.github.kotlintelegrambot.entities.Update
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -43,9 +44,7 @@ fun setItemCountInCart(itemId: Int, chatId: Long, itemCount: Int) {
 }
 
 private fun showEditedCart(bot: Bot, update: Update, selectedItemIndex: Int) {
-    val chatId = update.message?.chat?.id
-        ?: update.callbackQuery?.message?.chat?.id
-        ?: error("Message is not defined")
+    val chatId = update.chatId
     val messageId = update.message?.messageId
         ?: update.callbackQuery?.message?.messageId
         ?: error("Message is not defines")
@@ -54,38 +53,41 @@ private fun showEditedCart(bot: Bot, update: Update, selectedItemIndex: Int) {
             .getOrNull(selectedItemIndex)
     }
 
-    val (ikm, text) = getIkmAndText(cartItem, chatId)
+    val (ikm, text) = getIkmAndTextAndImageUrl(cartItem, chatId)
 
     bot.editMessageText(
         chatId,
         messageId,
         text = text,
-        replyMarkup = ikm
+        replyMarkup = ikm,
+        parseMode = ParseMode.MARKDOWN,
     )
 }
 
 private fun showCartFirstTime(bot: Bot, update: Update) {
-    val chatId = update.message?.chat?.id
-        ?: update.callbackQuery?.message?.chat?.id
-        ?: error("Message is not defined")
+    val chatId = update.chatId
     val cartItem = transaction {
         CartItem.sortedCartItemsWithChatId(chatId).firstOrNull()
     }
 
-    val (ikm, text) = getIkmAndText(cartItem, chatId)
+    val (ikm, text) = getIkmAndTextAndImageUrl(cartItem, chatId)
 
     bot.sendMessage(
         chatId,
         text = text,
-        replyMarkup = ikm
+        replyMarkup = ikm,
+        parseMode = ParseMode.MARKDOWN,
     )
 }
 
-private fun getIkmAndText(cartItem: CartItem?, chatId: Long): Pair<InlineKeyboardMarkup?, String> {
+private fun getIkmAndTextAndImageUrl(cartItem: CartItem?, chatId: Long): Pair<InlineKeyboardMarkup?, String> {
     if (cartItem == null) {
-        return null to """
-            В корзине пусто
-        """.trimIndent()
+        val catalogButton = InlineKeyboardButton(
+            "\uD83D\uDCD6 Купить что-нибудь",
+            callbackData = Json.encodeToString(ShowCategoriesCommand.new())
+        )
+        val ikm = InlineKeyboardMarkup(listOf(listOf(catalogButton)))
+        return ikm to "В корзине пусто"
     }
 
     val itemId = transaction { cartItem.item.id.value }
@@ -98,6 +100,12 @@ private fun getIkmAndText(cartItem: CartItem?, chatId: Long): Pair<InlineKeyboar
         CartItem.sortedCartItemsWithChatId(chatId).map { it.id.value }.indexOf(cartItem.id.value)
     }
     val normalizedIndexOfSelectedFile = indexOfSelectedItem + 1
+    val total = transaction {
+        CartItem
+            .sortedCartItemsWithChatId(chatId)
+            .sumOf { it.item.price?.multiply(BigDecimal(it.itemCount)) ?: BigDecimal.ZERO }
+    }
+    val imageUrl = transaction { cartItem.item.imageUrl }
 
     val removeAllButton = InlineKeyboardButton(
         "❌",
@@ -106,7 +114,7 @@ private fun getIkmAndText(cartItem: CartItem?, chatId: Long): Pair<InlineKeyboar
     )
     val itemCountPlusOne = itemCount + 1
     val addOneButton = InlineKeyboardButton(
-        "➕",
+        "🔺",
         callbackData = Json.encodeToString(SetItemCountInCartCommand.new(itemId, indexOfSelectedItem, itemCountPlusOne))
     )
     val itemCountButton = InlineKeyboardButton(
@@ -115,7 +123,7 @@ private fun getIkmAndText(cartItem: CartItem?, chatId: Long): Pair<InlineKeyboar
     )
     val itemCountMinusOne = itemCount - 1
     val removeOneButton = InlineKeyboardButton(
-        "➖",
+        "🔻",
         callbackData = if (itemCountMinusOne == 0) {
             // TODO изменить itemIndex на нормальное значение
             Json.encodeToString(DeleteItemFromCartCommand.new(itemId, 0))
@@ -138,12 +146,12 @@ private fun getIkmAndText(cartItem: CartItem?, chatId: Long): Pair<InlineKeyboar
         callbackData = Json.encodeToString(SelectAnotherItemFromCartCommand.new(nextIndex))
     )
     val checkoutButton = InlineKeyboardButton(
-        "Оформить заказ",
+        "✅ Заказ на $total ₽. Оформить?",
         callbackData = CHECKOUT_CALLBACK
     )
     val catalogButton = InlineKeyboardButton(
-        "Продолжить покупки",
-        callbackData = CATALOG_CALLBACK
+        "\uD83D\uDCD6 Продолжить покупки",
+        callbackData = Json.encodeToString(ShowCategoriesCommand.new())
     )
 
     val ikm = InlineKeyboardMarkup(
@@ -156,8 +164,8 @@ private fun getIkmAndText(cartItem: CartItem?, chatId: Long): Pair<InlineKeyboar
     )
 
     return ikm to """
-                Корзина:
+                *Корзина:*
                 $name
-                $itemCount шт. * $price ₽ = $cost ₽
+                $itemCount шт[.]($imageUrl) \* $price ₽ = $cost ₽
             """.trimIndent()
 }

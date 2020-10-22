@@ -11,9 +11,12 @@ class Item(id: EntityID<Int>) : IntEntity(id) {
     var category by Category referencedOn Items.category
     var name by Items.name
     var description by Items.description
-    var imageTelegram by Items.telegramImage
-    var img by Items.imageLink
+    var imageId by Items.telegramImage
+    var imageUrl by Items.imageLink
     var price by Items.price
     var isHidden by Items.isHidden
     var owningUsers by User via UsersItems
 }
+
+fun Item.Companion.allNotHidden(): List<Item> = all().filterNot { it.isHidden }
+fun Item.Companion.findByIdNotHidden(id: Int) = findById(id).takeUnless { it?.isHidden ?: true }

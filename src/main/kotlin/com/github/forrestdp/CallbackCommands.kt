@@ -53,3 +53,19 @@ class SelectAnotherItemFromCartCommand private constructor(val itemIndex: Int) :
         fun new(itemIndex: Int): CallbackCommand = SelectAnotherItemFromCartCommand(itemIndex)
     }
 }
+
+@Serializable
+@SerialName("showCategories")
+class ShowCategoriesCommand private constructor() : CallbackCommand() {
+    companion object {
+        fun new(): CallbackCommand = ShowCategoriesCommand()
+    }
+}
+
+@Serializable
+@SerialName("showCart")
+class ShowCartCommand private constructor() : CallbackCommand() {
+    companion object {
+        fun new(): CallbackCommand = ShowCartCommand()
+    }
+}

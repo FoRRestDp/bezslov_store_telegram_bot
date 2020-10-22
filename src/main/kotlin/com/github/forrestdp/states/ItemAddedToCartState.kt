@@ -1,10 +1,12 @@
 package com.github.forrestdp.states
 
-import com.github.forrestdp.CART_CALLBACK
 import com.github.forrestdp.AddItemToCartCommand
+import com.github.forrestdp.ShowCartCommand
+import com.github.forrestdp.getAddToCartText
 import com.github.forrestdp.tableentities.CartItem
 import com.github.forrestdp.tableentities.Item
 import com.github.forrestdp.tableentities.User
+import com.github.forrestdp.tableentities.findByIdNotHidden
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.entities.InlineKeyboardButton
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
@@ -16,7 +18,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 fun addItemToCart(bot: Bot, update: Update, chatId: Long, selectedItemId: Int) {
     val selectedItemCount = transaction {
         val user = User.findById(chatId) ?: error("User with such chat id not found")
-        val item = Item.findById(selectedItemId) ?: error("Item with such id not found")
+        val item = Item.findByIdNotHidden(selectedItemId) ?: error("Item with such id not found or hidden")
         val cartItem = CartItem.all().firstOrNull { 
             it.item == item && it.user == user
         }
@@ -35,13 +37,20 @@ fun addItemToCart(bot: Bot, update: Update, chatId: Long, selectedItemId: Int) {
     val messageId = update.callbackQuery?.message?.messageId
             ?: error("Message is not defined")
     val price = transaction {
-        Item.findById(selectedItemId)?.price?.toString() ?: "--"
+        Item.findByIdNotHidden(selectedItemId)?.price?.toString() ?: "--"
     }
-    bot.editMessageReplyMarkup(chatId, messageId, replyMarkup = InlineKeyboardMarkup(listOf(
+    val result = bot.editMessageReplyMarkup(chatId, messageId, replyMarkup = InlineKeyboardMarkup(listOf(
             listOf(InlineKeyboardButton(
-                    "Добавить в корзину \u2013 $price ₽ \n (В корзине: ${selectedItemCount})",
+                    getAddToCartText(price, selectedItemCount),
                     callbackData = Json.encodeToString(AddItemToCartCommand.new(selectedItemId))
             )),
-            listOf(InlineKeyboardButton("В корзину", callbackData = CART_CALLBACK))
+            listOf(InlineKeyboardButton(
+                "Перейти в корзину",
+                callbackData = Json.encodeToString(ShowCartCommand.new())
+            ))
     )))
+    bot.sendMessage(
+        chatId,
+        result.first?.errorBody()?.string() ?: "O_o"
+    )
 }

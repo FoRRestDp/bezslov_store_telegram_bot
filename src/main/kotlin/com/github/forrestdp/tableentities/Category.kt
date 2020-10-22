@@ -10,3 +10,5 @@ class Category(id: EntityID<Int>) : IntEntity(id) {
     var name by Categories.name
     var isHidden by Categories.isHidden
 }
+
+fun Category.Companion.allNotHidden() = all().filterNot { it.isHidden }

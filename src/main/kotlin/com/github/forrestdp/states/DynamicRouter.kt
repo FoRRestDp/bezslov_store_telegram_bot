@@ -10,17 +10,19 @@ import kotlinx.serialization.json.Json
 // This is used for dynamic number of possible callbacks
 
 fun toDynamicRouter(bot: Bot, update: Update) {
-    val chatId: Long = update.callbackQuery?.message?.chat?.id
-        ?: error("Callback query or it's message is not defined")
+    val chatId: Long = update.chatId
     val jsonData = update.callbackQuery?.data ?: ""
     if (!jsonData.startsWith("{")) return
-    val data = runCatching { Json.decodeFromString<CallbackCommand>(jsonData) }.getOrNull() ?: return
+    val data = runCatching {
+        Json.decodeFromString<CallbackCommand>(jsonData)
+    }.getOrNull() ?: return
+    
     when (data) {
         is AddItemToCartCommand -> {
             addItemToCart(bot, update, chatId, data.itemId)
         }
         is ShowItemsCommand -> {
-            toItemsList(bot, update, chatId, data.categoryId, data.pageNumber)
+            goToItemsList(bot, update, chatId, data.categoryId, data.pageNumber)
         }
         is DeleteItemFromCartCommand -> {
             deleteItemFromCart(data.itemId, chatId)
@@ -33,5 +35,7 @@ fun toDynamicRouter(bot: Bot, update: Update) {
         is SelectAnotherItemFromCartCommand -> {
             goToCartWithEditingMessage(bot, update, data.itemIndex)
         }
+        is ShowCategoriesCommand -> goToCategoriesList(bot, update)
+        is ShowCartCommand -> goToCartWithNewMessage(bot, update)
     }
 }

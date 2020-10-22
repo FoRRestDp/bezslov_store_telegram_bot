@@ -31,3 +31,7 @@ tasks.withType<KotlinCompile> {
 application {
     mainClassName = "MainKt"
 }
+val compileKotlin: KotlinCompile by tasks
+compileKotlin.kotlinOptions {
+    freeCompilerArgs = listOf("-Xinline-classes")
+}

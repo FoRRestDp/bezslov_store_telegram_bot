@@ -1,9 +1,8 @@
 package com.github.forrestdp.states
 
-import com.github.forrestdp.HOME_BUTTON_TEXT
-import com.github.forrestdp.CallbackCommand
-import com.github.forrestdp.ShowItemsCommand
+import com.github.forrestdp.*
 import com.github.forrestdp.tableentities.Category
+import com.github.forrestdp.tableentities.allNotHidden
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.entities.*
 import kotlinx.serialization.encodeToString
@@ -12,12 +11,11 @@ import org.jetbrains.exposed.sql.transactions.transaction
 
 // List of all CATEGORIES of items
 
-fun toCategoriesList(bot: Bot, update: Update) {
-    val chatId = update.message?.chat?.id ?: error("Message not defined")
+fun goToCategoriesList(bot: Bot, update: Update) {
+    val chatId = update.chatId
     transaction {
         val categories = Category
-            .all()
-            .filterNot { it.isHidden }
+            .allNotHidden()
             .sortedBy { it.id }
         println(categories.size)
         val inlineKeyboardMarkup = InlineKeyboardMarkup(listOf(
@@ -29,7 +27,11 @@ fun toCategoriesList(bot: Bot, update: Update) {
                     )
                 }
         ))
-        val replyKeyboardMarkup = KeyboardReplyMarkup(KeyboardButton(HOME_BUTTON_TEXT), resizeKeyboard = true)
+        val replyKeyboardMarkup = KeyboardReplyMarkup(listOf(listOf(
+            KeyboardButton(HOME_BUTTON_TEXT),
+        )),
+            resizeKeyboard = true,
+        )
         bot.sendMessage(chatId, "Каталог", replyMarkup = replyKeyboardMarkup)
         bot.sendMessage(chatId, "Выберите категорию товара:", replyMarkup = inlineKeyboardMarkup)
     }
