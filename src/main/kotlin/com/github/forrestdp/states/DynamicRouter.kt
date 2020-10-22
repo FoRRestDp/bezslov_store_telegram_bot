@@ -16,7 +16,7 @@ fun toDynamicRouter(bot: Bot, update: Update) {
     val data = runCatching {
         Json.decodeFromString<CallbackCommand>(jsonData)
     }.getOrNull() ?: return
-    
+
     when (data) {
         is AddItemToCartCommand -> {
             addItemToCart(bot, update, chatId, data.itemId)

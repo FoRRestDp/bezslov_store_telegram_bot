@@ -27,9 +27,10 @@ fun goToCategoriesList(bot: Bot, update: Update) {
                     )
                 }
         ))
-        val replyKeyboardMarkup = KeyboardReplyMarkup(listOf(listOf(
-            KeyboardButton(HOME_BUTTON_TEXT),
-        )),
+        val replyKeyboardMarkup = KeyboardReplyMarkup(
+            listOf(listOf(
+                KeyboardButton(HOME_BUTTON_TEXT),
+            )),
             resizeKeyboard = true,
         )
         bot.sendMessage(chatId, "Каталог", replyMarkup = replyKeyboardMarkup)

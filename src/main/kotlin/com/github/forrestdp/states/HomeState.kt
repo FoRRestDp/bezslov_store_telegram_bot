@@ -29,12 +29,12 @@ private fun Bot.sendHomeMessage(chatId: Long) {
     val ordersButton = KeyboardButton(ORDERS_BUTTON_TEXT)
     val helpButton = KeyboardButton(HELP_BUTTON_TEXT)
     val mainKeyboardMarkup = KeyboardReplyMarkup(listOf(
-            listOf(catalogButton, cartButton),
-            listOf(ordersButton, helpButton),
+        listOf(catalogButton, cartButton),
+        listOf(ordersButton, helpButton),
     ), resizeKeyboard = true)
     this.sendMessage(
-            chatId,
-            "Добро пожаловать в магазин \"Без слов\"",
-            replyMarkup = mainKeyboardMarkup
+        chatId,
+        "Добро пожаловать в магазин \"Без слов\"",
+        replyMarkup = mainKeyboardMarkup
     )
 }

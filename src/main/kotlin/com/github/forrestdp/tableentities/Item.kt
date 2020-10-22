@@ -8,6 +8,7 @@ import org.jetbrains.exposed.dao.id.EntityID
 
 class Item(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<Item>(Items)
+
     var category by Category referencedOn Items.category
     var name by Items.name
     var description by Items.description
