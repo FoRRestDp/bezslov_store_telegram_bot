@@ -72,20 +72,25 @@ private fun routeCallback(bot: Bot, update: Update) {
 
 private fun routeText(bot: Bot, update: Update) {
     val chatId = update.chatId
+    val text = update.message?.text
     if (Admin.isActiveAdmin(chatId)) {
-        val description = Json.encodeToString(update.message?.text)
+        val description = Json.encodeToString(text)
         with(bot) {
             sendMessage(chatId, "Отправляю текст, подготовленный для вставки в БД")
             sendMessage(chatId, description.trim('"'))
         }
         return
     }
+    
+    if (text?.startsWith("/") != false) return
 
-    when (update.message?.text) {
+    when (text) {
         HOME_BUTTON_TEXT -> bot.goToHomeState(update)
         CATEGORIES_LIST_BUTTON_TEXT -> bot.goToCategoryListState(update)
         CART_BUTTON_TEXT -> bot.goToCartStateWithNewMessage(update)
         CHECKOUT_BUTTON_TEXT -> bot.goToCheckoutState(update)
-        else -> bot.sendMessage(chatId, "Сообщение не распознано")
+        HELP_BUTTON_TEXT -> bot.sendMessage(chatId, "Пока недоступно")
+        ORDERS_BUTTON_TEXT -> bot.sendMessage(chatId, "Пока недоступно")
+        else -> bot.sendMessage(chatId, WRONG_COMMAND_RESPONSE)
     }
 }
