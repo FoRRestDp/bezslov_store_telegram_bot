@@ -94,12 +94,11 @@ private fun showCartFirstTime(bot: Bot, update: Update) {
     val krm = getKeyboardReplyMarkup()
     
     with(bot) {
-        val (response, _) = sendMessage(
+        sendMessage(
             chatId,
             CART_PREMESSAGE_TEXT,
             replyMarkup = krm,
         )
-        deleteMessage(chatId, response?.body()?.result?.messageId)
         sendMessage(
             chatId,
             text = text,

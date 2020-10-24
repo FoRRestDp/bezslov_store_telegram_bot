@@ -25,11 +25,8 @@ fun Dispatcher.dispatch() {
             bot.sendMessage(update.chatId, "Stop admin")
         }
     }
-    text(HOME_BUTTON_TEXT) { bot, update -> bot.goToHomeState(update) }
-    text(CATEGORIES_LIST_BUTTON_TEXT) { bot, update -> bot.goToCategoryListState(update) }
-    text(CART_BUTTON_TEXT) { bot, update -> bot.goToCartStateWithNewMessage(update) }
-    text(CHECKOUT_BUTTON_TEXT) { bot, update -> bot.goToCheckoutState(update) }
     callbackQuery { bot, update -> routeCallback(bot, update) }
+    text { bot, update -> routeText(bot, update) }
     photos { bot, update, list ->
         val chatId = update.chatId
         if (Admin.isActiveAdmin(chatId)) {
@@ -39,7 +36,6 @@ fun Dispatcher.dispatch() {
             }
         }
     }
-    text { bot, update -> routeText(bot, update) }
 }
 
 private fun routeCallback(bot: Bot, update: Update) {
