@@ -1,9 +1,6 @@
-package com.github.forrestdp.tableentities
+package com.github.forrestdp.entities
 
 //import com.github.forrestdp.tables.SelectedItems
-import org.jetbrains.exposed.dao.LongEntity
-import org.jetbrains.exposed.dao.LongEntityClass
-import org.jetbrains.exposed.dao.id.EntityID
 
 //class SelectedItem(id: EntityID<Long>) : LongEntity(id) {
 //    companion object : LongEntityClass<SelectedItem>(SelectedItems)

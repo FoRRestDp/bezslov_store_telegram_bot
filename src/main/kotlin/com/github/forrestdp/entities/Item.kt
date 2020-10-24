@@ -1,4 +1,4 @@
-package com.github.forrestdp.tableentities
+package com.github.forrestdp.entities
 
 import com.github.forrestdp.tables.Items
 import com.github.forrestdp.tables.UsersItems

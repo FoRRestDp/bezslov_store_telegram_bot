@@ -1,42 +1,95 @@
 package com.github.forrestdp
 
+import com.github.forrestdp.entities.deleteItemFromCart
+import com.github.forrestdp.entities.setItemCountInCart
+import com.github.forrestdp.entities.setItemCountInList
 import com.github.forrestdp.states.*
+import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.dispatcher.*
+import com.github.kotlintelegrambot.entities.Update
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-private var isAdmin = false
-
 fun Dispatcher.dispatch() {
-    command("start") { bot, update -> toHomeFirstTime(bot, update) }
+    command("start") { bot, update -> bot.goToHomeStateFirstTime(update) }
     command("admin") { bot, update ->
-        if (update.chatId != ADMIN_CHAT_ID) return@command
-        isAdmin = true
-        bot.sendMessage(update.chatId, "Now admin")
+        val chatId = update.chatId
+        if (Admin.setActiveAdmin(chatId, true)) {
+            bot.sendMessage(chatId, "Now admin")
+        }
     }
     command("stopadmin") { bot, update ->
-        if (update.chatId != ADMIN_CHAT_ID) return@command
-        isAdmin = false
-        bot.sendMessage(update.chatId, "Stop admin")
+        val chatId = update.chatId
+        if (Admin.setActiveAdmin(chatId, false)) {
+            bot.sendMessage(update.chatId, "Stop admin")
+        }
     }
-    text(HOME_BUTTON_TEXT) { bot, update -> toHome(bot, update) }
-    text(CATEGORIES_LIST_BUTTON_TEXT) { bot, update -> goToCategoriesList(bot, update) }
-    text(CART_BUTTON_TEXT) { bot, update -> goToCartWithNewMessage(bot, update) }
-    text(CHECKOUT_BUTTON_TEXT) { bot, update -> toCheckout(bot, update) }
-    callbackQuery { bot, update -> toDynamicRouter(bot, update) }
+    text(HOME_BUTTON_TEXT) { bot, update -> bot.goToHomeState(update) }
+    text(CATEGORIES_LIST_BUTTON_TEXT) { bot, update -> bot.goToCategoryListState(update) }
+    text(CART_BUTTON_TEXT) { bot, update -> bot.goToCartStateWithNewMessage(update) }
+    text(CHECKOUT_BUTTON_TEXT) { bot, update -> bot.goToCheckoutState(update) }
+    callbackQuery { bot, update -> routeCallback(bot, update) }
     photos { bot, update, list ->
-        if (update.chatId != ADMIN_CHAT_ID || !isAdmin) return@photos
-        bot.sendMessage(
-            update.chatId,
-            list[0].fileId,
-        )
+        val chatId = update.chatId
+        if (Admin.isActiveAdmin(chatId)) {
+            with(bot) {
+                sendMessage(chatId, "Возвращаем file id для этого изображения")
+                sendMessage(chatId, list[0].fileId)
+            }
+        }
     }
-    text { bot, update ->
-        if (update.chatId != ADMIN_CHAT_ID || !isAdmin) return@text
+    text { bot, update -> routeText(bot, update) }
+}
+
+private fun routeCallback(bot: Bot, update: Update) {
+    val chatId: Long = update.chatId
+    val jsonData = update.callbackQuery?.data ?: ""
+    if (!jsonData.startsWith("{")) return
+
+    when (val data = runCatching { Json.decodeFromString<CallbackData>(jsonData) }.getOrNull()) {
+        is SetItemCountInListCallbackData -> {
+            setItemCountInList(chatId, data.itemId, data.itemCountInList)
+            bot.goToItemsListStateWithEditingMessage(update, data.itemId, data.itemCountInList)
+        }
+        is ShowItemsCallbackData -> {
+            bot.goToItemsListStateWithNewMessage(chatId, data.categoryId, data.pageNumber)
+        }
+        is DeleteItemFromCartCallbackData -> {
+            deleteItemFromCart(data.itemId, chatId)
+            bot.goToCartStateWithEditingMessage(update, data.itemIndex)
+        }
+        is SetItemCountInCartCallbackData -> {
+            setItemCountInCart(data.itemId, chatId, data.itemCountInCart)
+            bot.goToCartStateWithEditingMessage(update, data.itemIndexInCart)
+        }
+        is SetItemIndexInCartCallbackData -> {
+            bot.goToCartStateWithEditingMessage(update, data.itemIndex)
+        }
+        is ShowCategoriesCallbackData -> bot.goToCategoryListState(update)
+        is ShowCartCallbackData -> bot.goToCartStateWithNewMessage(update)
+        is CheckoutCallbackData -> bot.goToCheckoutState(update)
+        is NoActionCallbackData -> {
+        }
+    }
+}
+
+private fun routeText(bot: Bot, update: Update) {
+    val chatId = update.chatId
+    if (Admin.isActiveAdmin(chatId)) {
         val description = Json.encodeToString(update.message?.text)
-        bot.sendMessage(
-            update.chatId,
-            description.trim('"'),
-        )
+        with(bot) {
+            sendMessage(chatId, "Отправляю текст, подготовленный для вставки в БД")
+            sendMessage(chatId, description.trim('"'))
+        }
+        return
+    }
+
+    when (update.message?.text) {
+        HOME_BUTTON_TEXT -> bot.goToHomeState(update)
+        CATEGORIES_LIST_BUTTON_TEXT -> bot.goToCategoryListState(update)
+        CART_BUTTON_TEXT -> bot.goToCartStateWithNewMessage(update)
+        CHECKOUT_BUTTON_TEXT -> bot.goToCheckoutState(update)
+        else -> bot.sendMessage(chatId, "Сообщение не распознано")
     }
 }

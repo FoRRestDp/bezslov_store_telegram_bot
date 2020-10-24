@@ -1,4 +1,4 @@
-package com.github.forrestdp.tableentities
+package com.github.forrestdp.entities
 
 import com.github.forrestdp.tables.Categories
 import org.jetbrains.exposed.dao.IntEntity
@@ -12,4 +12,4 @@ class Category(id: EntityID<Int>) : IntEntity(id) {
     var isHidden by Categories.isHidden
 }
 
-fun Category.Companion.allNotHidden() = all().filterNot { it.isHidden }
+fun Category.Companion.allNotHiddenSortedById() = all().filterNot { it.isHidden }.sortedBy { it.id }

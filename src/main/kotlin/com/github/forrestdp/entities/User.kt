@@ -1,4 +1,4 @@
-package com.github.forrestdp.tableentities
+package com.github.forrestdp.entities
 
 import com.github.forrestdp.tables.Users
 import org.jetbrains.exposed.dao.LongEntity

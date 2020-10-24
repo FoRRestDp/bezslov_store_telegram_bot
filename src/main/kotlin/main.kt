@@ -14,14 +14,14 @@ fun main() {
             url = "jdbc:postgresql://${dbUri.host}:${dbUri.port}${dbUri.path}?sslmode=require",
             driver = "org.postgresql.Driver",
             user = username,
-            password = password
+            password = password,
         )
     } else {
         Database.connect(
             url = "jdbc:postgresql://localhost:5432/egorponomaryov",
             driver = "org.postgresql.Driver",
             user = "egorponomaryov",
-            password = ""
+            password = "",
         )
     }
 
