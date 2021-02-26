@@ -7,12 +7,17 @@ import com.github.kotlintelegrambot.entities.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.math.BigDecimal
 
-fun Bot.goToCartStateWithNewMessage(update: Update) = showCartFirstTime(this, update)
+fun Bot.sendCartMessage(chatId: Long) {
+    require(chatId > 0)
+    showCartFirstTime(this, chatId)
+}
 
-fun Bot.goToCartStateWithEditingMessage(update: Update, selectedItemIndex: Int) =
-    showEditedCart(this, update, selectedItemIndex)
-
-private const val MESSAGE_NOT_FOUND_RESPONSE = "Message is not defines"
+fun Bot.editCartMessage(chatId: Long, messageId: Long, selectedItemIndex: Int) {
+    require(selectedItemIndex >= 0)
+    require(chatId > 0)
+    require(messageId > 0)
+    showEditedCart(this, chatId, messageId, selectedItemIndex)
+}
 
 private const val EMPTY_CART_INLINE_BUTTON_TEXT = "\uD83D\uDCD6 Купить что-нибудь"
 private const val REMOVE_ALL_FROM_CART_INLINE_BUTTON_TEXT = "❌"
@@ -57,8 +62,7 @@ private fun CartItem.Companion.allSorted(chatId: Long) =
     all().filter { it.user.chatId.value == chatId }.sortedBy { it.id.value }
 
 // Меняет показываемый корзиной в данном сообщении продукт
-private fun showEditedCart(bot: Bot, update: Update, selectedItemIndex: Int) {
-    val chatId = update.chatId
+private fun showEditedCart(bot: Bot, chatId: Long, messageId: Long, selectedItemIndex: Int) {
     val cartItem = transaction {
         CartItem.allSorted(chatId)
             .getOrNull(selectedItemIndex)
@@ -67,10 +71,6 @@ private fun showEditedCart(bot: Bot, update: Update, selectedItemIndex: Int) {
     val info = getCartMessageInfo(chatId, cartItem)
     val ikm = getInlineKeyboardMarkup(info)
     val text = getText(info)
-
-    val messageId = update.message?.messageId
-        ?: update.callbackQuery?.message?.messageId
-        ?: error(MESSAGE_NOT_FOUND_RESPONSE)
 
     bot.editMessageText(
         chatId,
@@ -82,8 +82,7 @@ private fun showEditedCart(bot: Bot, update: Update, selectedItemIndex: Int) {
 }
 
 // Присылает сообщение, в котором содержится информация о первом товаре из корзины
-private fun showCartFirstTime(bot: Bot, update: Update) {
-    val chatId = update.chatId
+private fun showCartFirstTime(bot: Bot, chatId: Long) {
     val cartItem = transaction {
         CartItem.allSorted(chatId).firstOrNull()
     }
@@ -119,18 +118,18 @@ private fun getInlineKeyboardMarkup(info: CartMessageInfo?): InlineKeyboardMarku
         return InlineKeyboardMarkup.createSingleButton(
             InlineKeyboardButton(
                 EMPTY_CART_INLINE_BUTTON_TEXT,
-                callbackData = ShowCategoriesCallbackData.new().toJsonString(),
+                callbackData = ShowCategoriesCallbackData.of().toJsonString(),
             )
         )
     }
 
     val removeAllButton = InlineKeyboardButton(
         REMOVE_ALL_FROM_CART_INLINE_BUTTON_TEXT,
-        callbackData = DeleteItemFromCartCallbackData.new(info.itemId, 0).toJsonString()
+        callbackData = DeleteItemFromCartCallbackData.of(info.itemId, 0).toJsonString()
     )
     val addOneButton = InlineKeyboardButton(
         ADD_ONE_TO_CART_INLINE_BUTTON_TEXT,
-        callbackData = SetItemCountInCartCallbackData.new(
+        callbackData = SetItemCountInCartCallbackData.of(
             info.itemId,
             info.itemIndexInCart,
             info.itemCountInCartPlusOne
@@ -138,14 +137,14 @@ private fun getInlineKeyboardMarkup(info: CartMessageInfo?): InlineKeyboardMarku
     )
     val itemCountButton = InlineKeyboardButton(
         itemCountInlineButtonText(info.itemCountInCart),
-        callbackData = NoActionCallbackData.new().toJsonString()
+        callbackData = NoActionCallbackData.of().toJsonString()
     )
     val removeOneButton = InlineKeyboardButton(
         REMOVE_ONE_FROM_CART_INLINE_BUTTON_TEXT,
         callbackData = if (info.itemCountInCartMinusOne == 0) {
-            DeleteItemFromCartCallbackData.new(info.itemId, 0).toJsonString()
+            DeleteItemFromCartCallbackData.of(info.itemId, 0).toJsonString()
         } else {
-            SetItemCountInCartCallbackData.new(
+            SetItemCountInCartCallbackData.of(
                 info.itemId,
                 info.itemIndexInCart,
                 info.itemCountInCartMinusOne
@@ -154,23 +153,23 @@ private fun getInlineKeyboardMarkup(info: CartMessageInfo?): InlineKeyboardMarku
     )
     val previousButton = InlineKeyboardButton(
         PREVIOUS_IN_CART_INLINE_BUTTON_TEXT,
-        callbackData = SetItemIndexInCartCallbackData.new(info.itemPreviousIndex).toJsonString(),
+        callbackData = SetItemIndexInCartCallbackData.of(info.itemPreviousIndex).toJsonString(),
     )
     val indexButton = InlineKeyboardButton(
         indexInlineButtonText(info),
-        callbackData = NoActionCallbackData.new().toJsonString(),
+        callbackData = NoActionCallbackData.of().toJsonString(),
     )
     val nextButton = InlineKeyboardButton(
         NEXT_IN_CART_INLINE_BUTTON_TEXT,
-        callbackData = SetItemIndexInCartCallbackData.new(info.itemNextIndex).toJsonString()
+        callbackData = SetItemIndexInCartCallbackData.of(info.itemNextIndex).toJsonString()
     )
     val checkoutButton = InlineKeyboardButton(
         checkoutInlineButtonText(info.cartTotalCost),
-        callbackData = CheckoutCallbackData.new().toJsonString()
+        callbackData = CheckoutCallbackData.of().toJsonString()
     )
     val categoriesListButton = InlineKeyboardButton(
         CATEGORIES_LIST_INLINE_BUTTON_TEXT,
-        callbackData = ShowCategoriesCallbackData.new().toJsonString()
+        callbackData = ShowCategoriesCallbackData.of().toJsonString()
     )
     
     return InlineKeyboardMarkup(
@@ -184,6 +183,8 @@ private fun getInlineKeyboardMarkup(info: CartMessageInfo?): InlineKeyboardMarku
 }
 
 private fun getCartMessageInfo(chatId: Long, cartItem: CartItem?): CartMessageInfo? = transaction {
+    require(chatId >= 0)
+    
     if (cartItem == null) return@transaction null
     val itemIndexInCart = CartItem.allSorted(chatId).map { it.id.value }.indexOf(cartItem.id.value)
     val cartTotalItemCount = CartItem.all().filter { it.user.chatId.value == chatId }.size

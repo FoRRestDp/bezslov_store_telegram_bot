@@ -7,12 +7,14 @@ import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.entities.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
-fun Bot.goToItemsListStateWithNewMessage(chatId: Long, categoryId: Int, pageNumber: Int): Unit =
+fun Bot.sendItemListMessages(chatId: Long, categoryId: Int, pageNumber: Int) {
+    require(pageNumber >= 0)
     showItemList(this, categoryId, chatId, pageNumber)
+}
 
-fun Bot.goToItemsListStateWithEditingMessage(update: Update, itemId: Int, itemCount: Int) {
-    val chatId = update.chatId
-    val messageId = update.messageId
+fun Bot.editItemListMessage(chatId: Long, messageId: Long, itemId: Int, itemCount: Int) {
+    require(itemId >= 0)
+    require(itemCount >= 0)
     val price = transaction {
         Item.findByIdNotHidden(itemId)?.price?.toString() ?: "--"
     }
@@ -22,11 +24,11 @@ fun Bot.goToItemsListStateWithEditingMessage(update: Update, itemId: Int, itemCo
         replyMarkup = InlineKeyboardMarkup(listOf(
             listOf(InlineKeyboardButton(
                 addToCartText(price, itemCount),
-                callbackData = SetItemCountInListCallbackData.new(itemId, itemCount + 1).toJsonString()
+                callbackData = SetItemCountInListCallbackData.of(itemId, itemCount + 1).toJsonString()
             )),
             listOf(InlineKeyboardButton(
                 GO_TO_CART_INLINE_BUTTON_TEXT,
-                callbackData = ShowCartCallbackData.new().toJsonString()
+                callbackData = ShowCartCallbackData.of().toJsonString()
             )),
         ))
     )
@@ -109,18 +111,18 @@ private fun getImk(
     InlineKeyboardMarkup(listOf(listOf(
         InlineKeyboardButton(
             GO_BACK_INLINE_BUTTON_TEXT,
-            callbackData = ShowCategoriesCallbackData.new().toJsonString(),
+            callbackData = ShowCategoriesCallbackData.of().toJsonString(),
         ),
         InlineKeyboardButton(
             SHOW_MORE_INLINE_BUTTON_TEXT,
-            callbackData = ShowItemsCallbackData.new(categoryId, pageNumber + 1).toJsonString(),
+            callbackData = ShowItemsCallbackData.of(categoryId, pageNumber + 1).toJsonString(),
         ),
     )))
 } else {
     InlineKeyboardMarkup.createSingleButton(
         InlineKeyboardButton(
             GO_BACK_INLINE_BUTTON_TEXT,
-            callbackData = ShowCategoriesCallbackData.new().toJsonString(),
+            callbackData = ShowCategoriesCallbackData.of().toJsonString(),
         ),
     )
 }
@@ -152,7 +154,7 @@ private fun Bot.sendMessageWithOneItem(chatId: Long, item: Item, user: User, cat
     val ikm = InlineKeyboardMarkup.createSingleButton(
         InlineKeyboardButton(
             addToCartText(price, itemCount),
-            callbackData = SetItemCountInListCallbackData.new(id, itemCount + 1).toJsonString(),
+            callbackData = SetItemCountInListCallbackData.of(id, itemCount + 1).toJsonString(),
         )
     )
     sendMessage(chatId, responseText, replyMarkup = ikm, parseMode = ParseMode.MARKDOWN)

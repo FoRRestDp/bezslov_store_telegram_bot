@@ -1,13 +1,17 @@
 package com.github.forrestdp
 
 object Admin {
-    fun isActiveAdmin(chatId: Long): Boolean = adminUserActivity[chatId] ?: false
-    fun setActiveAdmin(chatId: Long, isActive: Boolean): Boolean = if (isAdmin(chatId)) {
-        adminUserActivity[chatId] = isActive
+    private val activeAdmins = mutableSetOf<Long>()
+    private val admins = setOf(165239411L)
+    
+    fun isActiveAdmin(chatId: Long): Boolean = activeAdmins.contains(chatId)
+    
+    fun activateAdmin(chatId: Long): Boolean = if (admins.contains(chatId)) {
+        activeAdmins.add(chatId)
         true
     } else {
         false
     }
-    private fun isAdmin(chatId: Long): Boolean = adminUserActivity.containsKey(chatId)
-    private val adminUserActivity = mutableMapOf(165239411L to false)
+
+    fun deactivateAdmin(chatId: Long): Boolean = activeAdmins.remove(chatId)
 }

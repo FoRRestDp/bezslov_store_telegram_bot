@@ -14,7 +14,7 @@ fun CallbackData.toJsonString() = Json.encodeToString(this)
 @SerialName("showItems")
 class ShowItemsCallbackData private constructor(val categoryId: Int, val pageNumber: Int) : CallbackData() {
     companion object {
-        fun new(categoryId: Int, pageNumber: Int): CallbackData = ShowItemsCallbackData(categoryId, pageNumber)
+        fun of(categoryId: Int, pageNumber: Int): CallbackData = ShowItemsCallbackData(categoryId, pageNumber)
     }
 }
 
@@ -25,16 +25,16 @@ class SetItemCountInListCallbackData private constructor(
     @SerialName("ic") val itemCountInList: Int,
 ) : CallbackData() {
     companion object {
-        fun new(itemId: Int, itemCountInList: Int): CallbackData
+        fun of(itemId: Int, itemCountInList: Int): CallbackData
                 = SetItemCountInListCallbackData(itemId, itemCountInList)
     }
 }
 
 @Serializable
 @SerialName("deleteItemFromCart")
-class DeleteItemFromCartCallbackData private constructor(val itemId: Int, val itemIndex: Int) : CallbackData() {
+class DeleteItemFromCartCallbackData private constructor(val itemId: Int, val itemIndexInCart: Int) : CallbackData() {
     companion object {
-        fun new(itemId: Int, itemIndex: Int): CallbackData = DeleteItemFromCartCallbackData(itemId, itemIndex)
+        fun of(itemId: Int, itemIndex: Int): CallbackData = DeleteItemFromCartCallbackData(itemId, itemIndex)
     }
 }
 
@@ -46,16 +46,16 @@ class SetItemCountInCartCallbackData private constructor(
     @SerialName("iin") val itemIndexInCart: Int,
 ) : CallbackData() {
     companion object {
-        fun new(itemId: Int, itemIndex: Int, itemCount: Int): CallbackData =
+        fun of(itemId: Int, itemIndex: Int, itemCount: Int): CallbackData =
             SetItemCountInCartCallbackData(itemId, itemCount, itemIndex)
     }
 }
 
 @Serializable
 @SerialName("selectAnotherItem")
-class SetItemIndexInCartCallbackData private constructor(val itemIndex: Int) : CallbackData() {
+class SetItemIndexInCartCallbackData private constructor(val itemIndexInCart: Int) : CallbackData() {
     companion object {
-        fun new(itemIndex: Int): CallbackData = SetItemIndexInCartCallbackData(itemIndex)
+        fun of(itemIndex: Int): CallbackData = SetItemIndexInCartCallbackData(itemIndex)
     }
 }
 
@@ -63,7 +63,7 @@ class SetItemIndexInCartCallbackData private constructor(val itemIndex: Int) : C
 @SerialName("showCategories")
 class ShowCategoriesCallbackData private constructor() : CallbackData() {
     companion object {
-        fun new(): CallbackData = ShowCategoriesCallbackData()
+        fun of(): CallbackData = ShowCategoriesCallbackData()
     }
 }
 
@@ -71,7 +71,7 @@ class ShowCategoriesCallbackData private constructor() : CallbackData() {
 @SerialName("showCart")
 class ShowCartCallbackData private constructor() : CallbackData() {
     companion object {
-        fun new(): CallbackData = ShowCartCallbackData()
+        fun of(): CallbackData = ShowCartCallbackData()
     }
 }
 
@@ -79,7 +79,7 @@ class ShowCartCallbackData private constructor() : CallbackData() {
 @SerialName("noAction")
 class NoActionCallbackData private constructor() : CallbackData() {
     companion object {
-        fun new(): CallbackData = NoActionCallbackData()
+        fun of(): CallbackData = NoActionCallbackData()
     }
 }
 
@@ -87,6 +87,6 @@ class NoActionCallbackData private constructor() : CallbackData() {
 @SerialName("checkout")
 class CheckoutCallbackData private constructor() : CallbackData() {
     companion object {
-        fun new(): CallbackData = CheckoutCallbackData()
+        fun of(): CallbackData = CheckoutCallbackData()
     }
 }

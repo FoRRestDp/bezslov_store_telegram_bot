@@ -7,17 +7,15 @@ import com.github.kotlintelegrambot.entities.KeyboardReplyMarkup
 import com.github.kotlintelegrambot.entities.Update
 import org.jetbrains.exposed.sql.transactions.transaction
 
-fun Bot.goToHomeStateFirstTime(update: Update) {
+fun Bot.sendHomeMessageAndAddUser(update: Update) {
     val chatId = update.chatId
     insertIgnoreUser(chatId)
     sendHomeMessage(chatId)
 }
 
-fun Bot.goToHomeState(update: Update) = sendHomeMessage(update.chatId)
-
 private const val HOME_MESSAGE_TEXT = "Добро пожаловать в магазин \"Без слов\""
 
-private fun Bot.sendHomeMessage(chatId: Long) {
+fun Bot.sendHomeMessage(chatId: Long) {
     val krm = KeyboardReplyMarkup.createSimpleKeyboard(
         listOf(
             listOf(CATEGORIES_LIST_BUTTON_TEXT, CART_BUTTON_TEXT),

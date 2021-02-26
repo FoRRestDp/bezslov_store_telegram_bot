@@ -16,17 +16,18 @@ class CartItem(id: EntityID<Int>) : IntEntity(id) {
 
 fun CartItem.Companion.allNotHidden() = all().filterNot { it.item.isHidden }
 
-fun deleteItemFromCart(itemId: Int, chatId: Long) = transaction {
+fun deleteItemFromCart(chatId: Long, itemId: Int) = transaction {
+    require(itemId >= 0)
     CartItem.all()
         .firstOrNull { it.item.id.value == itemId && it.user.chatId.value == chatId }
         ?.delete()
         ?: error(CART_ITEM_NOT_FOUND_RESPONSE)
 }
 
-fun setItemCountInCart(itemId: Int, chatId: Long, itemCount: Int) {
+fun setItemCountInCart(chatId: Long, itemId: Int, itemCount: Int) {
     check(itemCount >= 0)
     if (itemCount == 0) {
-        deleteItemFromCart(itemId, chatId)
+        deleteItemFromCart(chatId, itemId)
         return
     }
     transaction {
@@ -39,6 +40,9 @@ fun setItemCountInCart(itemId: Int, chatId: Long, itemCount: Int) {
 }
 
 fun setItemCountInList(chatId: Long, itemId: Int, itemCount: Int): Unit = transaction {
+    require(chatId > 0)
+    require(itemId >= 0)
+    require(itemCount >= 0)
     val user = User.findById(chatId) ?: error(USER_NOT_FOUND_RESPONSE)
     val item = Item.findByIdNotHidden(itemId) ?: error(ITEM_NOT_FOUND_OR_HIDDEN_RESPONSE)
     val cartItem = CartItem
