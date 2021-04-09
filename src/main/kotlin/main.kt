@@ -20,13 +20,13 @@ fun main() {
         Database.connect(
             url = "jdbc:postgresql://localhost:5432/egorponomaryov",
             driver = "org.postgresql.Driver",
-            user = "egorponomaryov",
+            user = "user",
             password = "",
         )
     }
 
     bot {
-        token = "1396640094:AAEHqmLePI56L_PPZt_OQZGbc8U9yWb94H0"
+        token = "token"
         dispatch { dispatch() }
     }.startPolling()
 }
