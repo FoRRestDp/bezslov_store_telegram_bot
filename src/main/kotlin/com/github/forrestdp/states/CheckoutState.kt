@@ -1,9 +1,8 @@
 package com.github.forrestdp.states
 
-import com.github.forrestdp.chatId
 import com.github.kotlintelegrambot.Bot
-import com.github.kotlintelegrambot.entities.Update
+import com.github.kotlintelegrambot.entities.ChatId
 
 fun Bot.sendCheckoutMessage(chatId: Long) {
-    sendMessage(chatId, "Пока недоступно")
+    sendMessage(ChatId.fromId(chatId), "Пока недоступно")
 }

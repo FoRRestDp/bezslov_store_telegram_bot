@@ -3,6 +3,7 @@ package com.github.forrestdp.states
 import com.github.forrestdp.*
 import com.github.forrestdp.entities.User
 import com.github.kotlintelegrambot.Bot
+import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.KeyboardReplyMarkup
 import com.github.kotlintelegrambot.entities.Update
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -23,7 +24,7 @@ fun Bot.sendHomeMessage(chatId: Long) {
         ),
         resizeKeyboard = true
     )
-    sendMessage(chatId, HOME_MESSAGE_TEXT, replyMarkup = krm)
+    sendMessage(ChatId.fromId(chatId), HOME_MESSAGE_TEXT, replyMarkup = krm)
 }
 
 private fun insertIgnoreUser(chatId: Long) = transaction {

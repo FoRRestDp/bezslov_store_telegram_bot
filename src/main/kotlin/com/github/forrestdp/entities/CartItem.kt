@@ -1,6 +1,7 @@
 package com.github.forrestdp.entities
 
 import com.github.forrestdp.tables.UsersItems
+import com.github.kotlintelegrambot.entities.ChatId
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID

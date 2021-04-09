@@ -6,6 +6,7 @@ import com.github.forrestdp.entities.setItemCountInList
 import com.github.forrestdp.states.*
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.dispatcher.*
+import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.Update
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.decodeFromString
@@ -13,59 +14,58 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 fun Dispatcher.dispatch() {
-    command("start") { bot, update -> bot.sendHomeMessageAndAddUser(update) }
-    command("admin") { bot, update ->
-        val chatId = update.chatId
+    command("start") { bot.sendHomeMessageAndAddUser(update) }
+    command("admin") {
+        val chatId = ChatId.fromId(update.chatId)
         if (Admin.activateAdmin(chatId)) {
             bot.sendMessage(chatId, "Now admin")
         }
     }
-    command("stopadmin") { bot, update ->
-        val chatId = update.chatId
+    command("stopadmin") {
+        val chatId = ChatId.fromId(update.chatId)
         if (Admin.deactivateAdmin(chatId)) {
-            bot.sendMessage(update.chatId, "Stop admin")
+            bot.sendMessage(chatId, "Stop admin")
         }
     }
-    callbackQuery { bot, update -> routeCallback(bot, update) }
-    text { bot, update -> routeText(bot, update) }
-    photos { bot, update, list ->
-        val chatId = update.chatId
+    callbackQuery { routeCallback(bot, update) }
+    text { routeText(bot, update) }
+    photos {
+        val chatId = ChatId.fromId(update.chatId)
         if (Admin.isActiveAdmin(chatId)) {
-            with(bot) {
-                sendMessage(chatId, "Возвращаем file id для этого изображения")
-                sendMessage(chatId, list[0].fileId)
-            }
+            bot.sendMessage(chatId, "Возвращаем file id для этого изображения")
+            bot.sendMessage(chatId, this.media[0].fileId)
         }
     }
 }
 
 private fun routeCallback(bot: Bot, update: Update) {
-    val chatId = update.chatId
+    val chatIdLong = update.chatId
+    val chatId = ChatId.fromId(chatIdLong)
     val messageId = update.messageId
     val jsonData = update.callbackQuery?.data ?: ""
 
     val unused: Any = when (val data = Json.decodeFromStringOrNull<CallbackData>(jsonData)) {
         is SetItemCountInListCallbackData -> {
-            setItemCountInList(chatId, data.itemId, data.itemCountInList)
-            bot.editItemListMessage(chatId, messageId, data.itemId, data.itemCountInList)
+            setItemCountInList(chatIdLong, data.itemId, data.itemCountInList)
+            bot.editItemListMessage(chatIdLong, messageId, data.itemId, data.itemCountInList)
         }
         is ShowItemsCallbackData -> {
-            bot.sendItemListMessages(chatId, data.categoryId, data.pageNumber)
+            bot.sendItemListMessages(chatIdLong, data.categoryId, data.pageNumber)
         }
         is DeleteItemFromCartCallbackData -> {
-            deleteItemFromCart(chatId, data.itemId)
-            bot.editCartMessage(chatId, messageId, data.itemIndexInCart)
+            deleteItemFromCart(chatIdLong, data.itemId)
+            bot.editCartMessage(chatIdLong, messageId, data.itemIndexInCart)
         }
         is SetItemCountInCartCallbackData -> {
-            setItemCountInCart(chatId, data.itemId, data.itemCountInCart)
-            bot.editCartMessage(chatId, messageId, data.itemIndexInCart)
+            setItemCountInCart(chatIdLong, data.itemId, data.itemCountInCart)
+            bot.editCartMessage(chatIdLong, messageId, data.itemIndexInCart)
         }
         is SetItemIndexInCartCallbackData -> {
-            bot.editCartMessage(chatId, messageId, data.itemIndexInCart)
+            bot.editCartMessage(chatIdLong, messageId, data.itemIndexInCart)
         }
-        is ShowCategoriesCallbackData -> bot.sendCategoryListMessage(chatId)
-        is ShowCartCallbackData -> bot.sendCartMessage(chatId)
-        is CheckoutCallbackData -> bot.sendCheckoutMessage(chatId)
+        is ShowCategoriesCallbackData -> bot.sendCategoryListMessage(chatIdLong)
+        is ShowCartCallbackData -> bot.sendCartMessage(chatIdLong)
+        is CheckoutCallbackData -> bot.sendCheckoutMessage(chatIdLong)
         is NoActionCallbackData -> {
         }
         null -> {
@@ -81,7 +81,8 @@ private inline fun <reified T> Json.Default.decodeFromStringOrNull(string: Strin
 }
 
 private fun routeText(bot: Bot, update: Update) {
-    val chatId = update.chatId
+    val chatIdLong = update.chatId
+    val chatId = ChatId.fromId(chatIdLong)
     val text = update.message?.text
     if (Admin.isActiveAdmin(chatId)) {
         val description = Json.encodeToString(text).trim('"')
@@ -95,10 +96,10 @@ private fun routeText(bot: Bot, update: Update) {
     if (text?.startsWith("/") != false) return
 
     val unused: Any = when (text) {
-        HOME_BUTTON_TEXT -> bot.sendHomeMessage(chatId)
-        CATEGORIES_LIST_BUTTON_TEXT -> bot.sendCategoryListMessage(chatId)
-        CART_BUTTON_TEXT -> bot.sendCartMessage(chatId)
-        CHECKOUT_BUTTON_TEXT -> bot.sendCheckoutMessage(chatId)
+        HOME_BUTTON_TEXT -> bot.sendHomeMessage(chatIdLong)
+        CATEGORIES_LIST_BUTTON_TEXT -> bot.sendCategoryListMessage(chatIdLong)
+        CART_BUTTON_TEXT -> bot.sendCartMessage(chatIdLong)
+        CHECKOUT_BUTTON_TEXT -> bot.sendCheckoutMessage(chatIdLong)
         HELP_BUTTON_TEXT -> bot.sendMessage(chatId, "Пока недоступно")
         ORDERS_BUTTON_TEXT -> bot.sendMessage(chatId, "Пока недоступно")
         else -> bot.sendMessage(chatId, WRONG_COMMAND_RESPONSE)

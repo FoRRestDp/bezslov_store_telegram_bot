@@ -4,6 +4,7 @@ import com.github.forrestdp.*
 import com.github.forrestdp.entities.CartItem
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.entities.*
+import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.math.BigDecimal
 
@@ -62,18 +63,18 @@ private fun CartItem.Companion.allSorted(chatId: Long) =
     all().filter { it.user.chatId.value == chatId }.sortedBy { it.id.value }
 
 // Меняет показываемый корзиной в данном сообщении продукт
-private fun showEditedCart(bot: Bot, chatId: Long, messageId: Long, selectedItemIndex: Int) {
+private fun showEditedCart(bot: Bot, chatIdLong: Long, messageId: Long, selectedItemIndex: Int) {
     val cartItem = transaction {
-        CartItem.allSorted(chatId)
+        CartItem.allSorted(chatIdLong)
             .getOrNull(selectedItemIndex)
     }
 
-    val info = getCartMessageInfo(chatId, cartItem)
+    val info = getCartMessageInfo(chatIdLong, cartItem)
     val ikm = getInlineKeyboardMarkup(info)
     val text = getText(info)
 
     bot.editMessageText(
-        chatId,
+        ChatId.fromId(chatIdLong),
         messageId,
         text = text,
         replyMarkup = ikm,
@@ -82,16 +83,17 @@ private fun showEditedCart(bot: Bot, chatId: Long, messageId: Long, selectedItem
 }
 
 // Присылает сообщение, в котором содержится информация о первом товаре из корзины
-private fun showCartFirstTime(bot: Bot, chatId: Long) {
+private fun showCartFirstTime(bot: Bot, chatIdLong: Long) {
+    val chatId = ChatId.fromId(chatIdLong)
     val cartItem = transaction {
-        CartItem.allSorted(chatId).firstOrNull()
+        CartItem.allSorted(chatIdLong).firstOrNull()
     }
 
-    val info = getCartMessageInfo(chatId, cartItem)
+    val info = getCartMessageInfo(chatIdLong, cartItem)
     val text = getText(info)
     val ikm = getInlineKeyboardMarkup(info)
     val krm = getKeyboardReplyMarkup()
-    
+
     with(bot) {
         sendMessage(
             chatId,
@@ -116,18 +118,18 @@ private fun getText(info: CartMessageInfo?): String = if (info == null) {
 private fun getInlineKeyboardMarkup(info: CartMessageInfo?): InlineKeyboardMarkup {
     if (info == null) {
         return InlineKeyboardMarkup.createSingleButton(
-            InlineKeyboardButton(
+            InlineKeyboardButton.CallbackData(
                 EMPTY_CART_INLINE_BUTTON_TEXT,
                 callbackData = ShowCategoriesCallbackData.of().toJsonString(),
             )
         )
     }
 
-    val removeAllButton = InlineKeyboardButton(
+    val removeAllButton = InlineKeyboardButton.CallbackData(
         REMOVE_ALL_FROM_CART_INLINE_BUTTON_TEXT,
         callbackData = DeleteItemFromCartCallbackData.of(info.itemId, 0).toJsonString()
     )
-    val addOneButton = InlineKeyboardButton(
+    val addOneButton = InlineKeyboardButton.CallbackData(
         ADD_ONE_TO_CART_INLINE_BUTTON_TEXT,
         callbackData = SetItemCountInCartCallbackData.of(
             info.itemId,
@@ -135,11 +137,11 @@ private fun getInlineKeyboardMarkup(info: CartMessageInfo?): InlineKeyboardMarku
             info.itemCountInCartPlusOne
         ).toJsonString()
     )
-    val itemCountButton = InlineKeyboardButton(
+    val itemCountButton = InlineKeyboardButton.CallbackData(
         itemCountInlineButtonText(info.itemCountInCart),
         callbackData = NoActionCallbackData.of().toJsonString()
     )
-    val removeOneButton = InlineKeyboardButton(
+    val removeOneButton = InlineKeyboardButton.CallbackData(
         REMOVE_ONE_FROM_CART_INLINE_BUTTON_TEXT,
         callbackData = if (info.itemCountInCartMinusOne == 0) {
             DeleteItemFromCartCallbackData.of(info.itemId, 0).toJsonString()
@@ -151,28 +153,28 @@ private fun getInlineKeyboardMarkup(info: CartMessageInfo?): InlineKeyboardMarku
             ).toJsonString()
         }
     )
-    val previousButton = InlineKeyboardButton(
+    val previousButton = InlineKeyboardButton.CallbackData(
         PREVIOUS_IN_CART_INLINE_BUTTON_TEXT,
         callbackData = SetItemIndexInCartCallbackData.of(info.itemPreviousIndex).toJsonString(),
     )
-    val indexButton = InlineKeyboardButton(
+    val indexButton = InlineKeyboardButton.CallbackData(
         indexInlineButtonText(info),
         callbackData = NoActionCallbackData.of().toJsonString(),
     )
-    val nextButton = InlineKeyboardButton(
+    val nextButton = InlineKeyboardButton.CallbackData(
         NEXT_IN_CART_INLINE_BUTTON_TEXT,
         callbackData = SetItemIndexInCartCallbackData.of(info.itemNextIndex).toJsonString()
     )
-    val checkoutButton = InlineKeyboardButton(
+    val checkoutButton = InlineKeyboardButton.CallbackData(
         checkoutInlineButtonText(info.cartTotalCost),
         callbackData = CheckoutCallbackData.of().toJsonString()
     )
-    val categoriesListButton = InlineKeyboardButton(
+    val categoriesListButton = InlineKeyboardButton.CallbackData(
         CATEGORIES_LIST_INLINE_BUTTON_TEXT,
         callbackData = ShowCategoriesCallbackData.of().toJsonString()
     )
-    
-    return InlineKeyboardMarkup(
+
+    return InlineKeyboardMarkup.create(
         listOf(
             listOf(removeAllButton, addOneButton, itemCountButton, removeOneButton),
             listOf(previousButton, indexButton, nextButton),
@@ -184,7 +186,7 @@ private fun getInlineKeyboardMarkup(info: CartMessageInfo?): InlineKeyboardMarku
 
 private fun getCartMessageInfo(chatId: Long, cartItem: CartItem?): CartMessageInfo? = transaction {
     require(chatId >= 0)
-    
+
     if (cartItem == null) return@transaction null
     val itemIndexInCart = CartItem.allSorted(chatId).map { it.id.value }.indexOf(cartItem.id.value)
     val cartTotalItemCount = CartItem.all().filter { it.user.chatId.value == chatId }.size
@@ -212,11 +214,11 @@ private fun getCartMessageInfo(chatId: Long, cartItem: CartItem?): CartMessageIn
     )
 }
 
-private fun getKeyboardReplyMarkup() = KeyboardReplyMarkup(
+private fun getKeyboardReplyMarkup() = KeyboardReplyMarkup.createSimpleKeyboard(
     listOf(listOf(
-        KeyboardButton(HOME_BUTTON_TEXT),
-        KeyboardButton(CART_BUTTON_TEXT),
-        KeyboardButton(CATEGORIES_LIST_BUTTON_TEXT)
+        HOME_BUTTON_TEXT,
+        CART_BUTTON_TEXT,
+        CATEGORIES_LIST_BUTTON_TEXT,
     )),
     resizeKeyboard = true,
 )

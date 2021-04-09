@@ -5,6 +5,7 @@ import com.github.forrestdp.entities.Category
 import com.github.forrestdp.entities.allNotHiddenSortedById
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.entities.*
+import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
 import org.jetbrains.exposed.sql.transactions.transaction
 
 private const val CATEGORY_LIST_PREMESSAGE_TEXT = "Каталог"
@@ -12,9 +13,9 @@ private const val CATEGORY_LIST_MESSAGE_TEXT = "Выберите категор�
 
 fun Bot.sendCategoryListMessage(chatId: Long): Unit = transaction {
     val categories = Category.allNotHiddenSortedById()
-    val ikm = InlineKeyboardMarkup(listOf(
+    val ikm = InlineKeyboardMarkup.create(listOf(
         categories.map { category ->
-            InlineKeyboardButton(
+            InlineKeyboardButton.CallbackData(
                 text = category.name,
                 callbackData = ShowItemsCallbackData.of(category.id.value, 0).toJsonString(),
             )
@@ -24,6 +25,6 @@ fun Bot.sendCategoryListMessage(chatId: Long): Unit = transaction {
         listOf(listOf(HOME_BUTTON_TEXT)),
         resizeKeyboard = true,
     )
-    sendMessage(chatId, CATEGORY_LIST_PREMESSAGE_TEXT, replyMarkup = krm)
-    sendMessage(chatId, CATEGORY_LIST_MESSAGE_TEXT, replyMarkup = ikm)
+    sendMessage(ChatId.fromId(chatId), CATEGORY_LIST_PREMESSAGE_TEXT, replyMarkup = krm)
+    sendMessage(ChatId.fromId(chatId), CATEGORY_LIST_MESSAGE_TEXT, replyMarkup = ikm)
 }
